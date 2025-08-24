@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: distml_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://distml:distml@db:5432/distml
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: distml_db
+    restart: always
+    environment:
+      POSTGRES_USER: distml
+      POSTGRES_PASSWORD: distml
+      POSTGRES_DB: distml
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
