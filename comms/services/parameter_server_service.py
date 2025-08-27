@@ -3,6 +3,7 @@ import json
 import logging
 import zmq
 import asyncio
+from db.dao_training_job import update_training_log
 
 logger = logging.getLogger("parameter-server")
 
@@ -33,3 +34,6 @@ class ParameterServerService:
 
     async def send_message(self, client_id, msg):
         await self.socket.send_multipart([client_id, json.dumps(msg).encode()])
+
+def receive_log(job_id, log_entry, training_log_history):
+    update_training_log(job_id, log_entry, training_log_history)
