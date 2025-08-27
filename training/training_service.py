@@ -50,6 +50,7 @@ def get_data(train_path, validation_split, batch_size):
     val_gen = gen.flow_from_directory(train_path, target_size=(512, 512), batch_size=batch_size, subset="validation")
     return train_gen, val_gen
 
+"""
 def train_model(job_data, dataset_details):
     job_id = job_data["job_id"]
     p = job_data["parameter_settings"]
@@ -63,3 +64,5 @@ def train_model(job_data, dataset_details):
 
     model.fit(train_gen, validation_data=val_gen, epochs=int(p["epochs"]), callbacks=callbacks)
     return model
+
+"""

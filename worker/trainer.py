@@ -13,6 +13,7 @@ import asyncio
 import logging
 import numpy as np
 from comms.zmq_worker import PSWorkerClient
+from training.trainer import train_model  # Import your real training logic
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,12 @@ class Trainer:
         logger.info("Fetched global weights: %s", self.global_weights)
 
     async def run_training(self, steps: int = 5):
-        """Run the training loop for N steps."""
         await self.setup()
-        for step in range(steps):
-            await self.train_step(step)
-            await asyncio.sleep(1)  # Simulate compute time
+        # Fetch job parameters and dataset from PS (implement this logic)
+        job_params = await self.client.get_job_params(self.job_id)
+        train_data, val_data = await self.client.get_data(self.job_id)
+        # Call the real training function
+        train_model(job_params, train_data, val_data, self.job_id, self.client)
         logger.info("Training completed for job %s", self.job_id)
 
 
