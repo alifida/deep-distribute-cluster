@@ -151,11 +151,12 @@ class ParameterServerZMQ:
         random_seed = _to_int(params.get("random_seed"), 42)
 
         # prefer explicit cluster setting; fallback to 1
-        try:
-            num_partitions = int(params.get("cluster")) if params.get("cluster") else max(len(self.workers), 1)
-        except Exception:
-            num_partitions = max(len(self.workers), 1)
+        #try:
+        #    num_partitions = int(params.get("cluster")) if params.get("cluster") else max(len(self.workers), 1)
+        #except Exception:
+        #    num_partitions = max(len(self.workers), 1)
 
+        num_partitions = max(len(self.workers), 1)
         host_url = dataset_details.get("host_url", "").rstrip("/")
 
         # Build partitions: list of tuples (url,label) for 'train' and 'test'
