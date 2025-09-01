@@ -11,7 +11,7 @@ from utils.db import SessionLocal
 from models.db_models import TrainTrainingJob as Job
 import tensorflow as tf
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
-
+from services.keras_model_service import KerasCatalogService
 
 logging.basicConfig(
     level=logging.INFO,
@@ -205,11 +205,11 @@ class ParameterServerZMQ:
             batches_per_partition[p_idx]["test"] = to_batches(p["test"])
 
         # Build initial model and weights
-        algo = params.get("algo", "tiny")
+        algo = params.get("algo_name", "tiny")
         input_shape = tuple(params.get("input_shape", (224, 224, 3)))
 
-        model = self._build_model(algo, input_shape)
-        model_json = model.to_json()
+        model = KerasCatalogService.build_model(algo, input_shape)
+        #model_json = model.to_json()
         weights_lists, weights_shapes = _serialize_weights(model.get_weights())
 
         # Build job state
@@ -247,7 +247,7 @@ class ParameterServerZMQ:
             "model_spec": {
                 "algo": algo,
                 "input_shape": input_shape,
-                "model_json": model_json
+                #"model_json": model_json
             }
         }
 
@@ -286,7 +286,8 @@ class ParameterServerZMQ:
                 "num_val_batches": len(job["batches"][worker_id]["val"]),
                 "num_test_batches": len(job["batches"][worker_id]["test"]),
                 "hyperparams": job["hyperparams"],
-                "model_json": job["model_spec"]["model_json"],
+                #"model_json": job["model_spec"]["model_json"],
+                "model_spec": job["model_spec"],
                 "initial_weights": {
                     "lists": job["global_weights_lists"],
                     "shapes": job["global_weights_shapes"]
@@ -314,7 +315,8 @@ class ParameterServerZMQ:
             "num_val_batches": len(job["batches"][worker_id]["val"]),
             "num_test_batches": len(job["batches"][worker_id]["test"]),
             "hyperparams": job["hyperparams"],
-            "model_json": job["model_spec"]["model_json"],
+            #"model_json": job["model_spec"]["model_json"],
+            "model_spec": job["model_spec"],
             "initial_weights": {
                 "lists": job["global_weights_lists"],
                 "shapes": job["global_weights_shapes"]
@@ -455,7 +457,7 @@ class ParameterServerZMQ:
 
         return {"status": "ok"}
 
-    def _build_model(self, algo: str, input_shape):
+    def _build_model__old_working(self, algo: str, input_shape):
         # mirror worker's tiny model; allow dynamic HxW
         if not input_shape:
             input_shape = (None, None, 3)
@@ -465,6 +467,8 @@ class ParameterServerZMQ:
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
         outputs = tf.keras.layers.Dense(1, activation="sigmoid")(x)
         return tf.keras.Model(inputs, outputs)
+
+  
 
     async def _finalize_job(self, job_id: str):
         job = self.jobs.get(job_id)
@@ -477,10 +481,10 @@ class ParameterServerZMQ:
             return
 
         # Rebuild model
-        model = self._build_model(
+        model = KerasCatalogService.build_model(
             model_spec.get("algo"),
             tuple(model_spec.get("input_shape", ())),
-            **model_spec.get("extra_args", {})  # Pass extra params if stored
+           
         )
 
         # Set global weights
@@ -525,10 +529,9 @@ class ParameterServerZMQ:
             return
 
         # Rebuild model
-        model = self._build_model(
+        model = KerasCatalogService.build_model(
             model_spec.get("algo"),
-            tuple(model_spec.get("input_shape", ())),
-            **model_spec.get("extra_args", {})  # Pass extra params if stored
+            tuple(model_spec.get("input_shape", ()))
         )
 
         # Check weight shapes before setting

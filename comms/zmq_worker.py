@@ -25,6 +25,10 @@ import numpy as np
 import zmq.asyncio
 from PIL import Image
 import tensorflow as tf
+from services.keras_model_service import KerasCatalogService
+
+
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("worker")
@@ -334,6 +338,28 @@ class WorkerZMQ:
         # we won't compute precision/recall here unless requested by PS aggregation
         return avg_loss, acc
 
+
+
+    def _build_model(self, algo: str, input_shape):
+        if not input_shape:
+            input_shape = (150, 150, 3)  # Default shape if none is provided
+
+        try:
+            # Try to load from predefined Keras applications
+            base_model = KerasCatalogService.get_model_object(algo, input_shape=input_shape)
+            return base_model
+
+        except Exception as e:
+            logger.error(f"Error loading model '{algo}': {e}. Falling back to tiny custom CNN.")
+            # Fallback to tiny custom CNN if algo is not known
+            inputs = tf.keras.Input(shape=input_shape)
+            x = tf.keras.layers.Conv2D(16, 3, activation="relu")(inputs)
+            x = tf.keras.layers.MaxPool2D()(x)
+            x = tf.keras.layers.GlobalAveragePooling2D()(x)
+            outputs = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+            return tf.keras.Model(inputs, outputs)
+
+
     # -------------------------
     # Main loop
     # -------------------------
@@ -366,20 +392,23 @@ class WorkerZMQ:
             logger.info("Registered worker: %s", reg.get("msg", "ok"))
 
             hp = reg.get("hyperparams", {}) or {}
-            model_json = reg.get("model_json")
+            model_spec = reg.get("model_spec", {}) or {}
+            #model_json = reg.get("model_json")
             init_w = reg.get("initial_weights", {}) or {}
 
             # apply hyperparams
             self._apply_hyperparams(hp)
 
             # Rebuild model from JSON (exact architecture)
-            if not model_json:
-                logger.error("No model_json received; aborting")
-                return
+            #if not model_json:
+            #    logger.error("No model_json received; aborting")
+            #    return
+            
             try:
-                self.model = tf.keras.models.model_from_json(model_json)
+                #self.model = tf.keras.models.model_from_json(model_json)
+                self.model = KerasCatalogService.build_model(model_spec.get("algo", "tiny"), tuple(model_spec.get("input_shape", (150, 150, 3))))
             except Exception:
-                logger.exception("Failed to build model from JSON")
+                logger.exception("Failed to build model ")
                 return
 
             # Determine target input size from model's input shape if available

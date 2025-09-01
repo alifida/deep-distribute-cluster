@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "FastAPI",
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
@@ -12,6 +12,14 @@
             ],
             "jinja": true,
             "python": "${workspaceFolder}/venv/bin/python"  
-        }
+        },
+        {
+            "name": "zmq_worker",
+            "type": "python",
+            "request": "launch",
+            "module": "comms.zmq_worker",              // ✅ Run as module
+            "cwd": "${workspaceFolder}",               // ✅ Set working directory to project root
+            "justMyCode": true
+            }
     ]
 }
