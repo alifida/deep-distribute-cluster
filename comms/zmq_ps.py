@@ -6,7 +6,7 @@ import zmq.asyncio
 import numpy as np
 from typing import Dict, List, Optional
 from copy import deepcopy
-
+import time
 from utils.db import SessionLocal
 from models.db_models import TrainTrainingJob as Job
 import tensorflow as tf
@@ -72,6 +72,7 @@ class ParameterServerZMQ:
         self.job_manager = JobManager()
         self.jobs: Dict[str, dict] = {}      # job_id -> job_state
         self.workers = {}
+        self.training_started_at = None
 
     async def start(self):
         self.socket.bind(self.bind_addr)
@@ -155,7 +156,7 @@ class ParameterServerZMQ:
         #    num_partitions = int(params.get("cluster")) if params.get("cluster") else max(len(self.workers), 1)
         #except Exception:
         #    num_partitions = max(len(self.workers), 1)
-
+        self.training_started_at = time.time()
         num_partitions = max(len(self.workers), 1)
         host_url = dataset_details.get("host_url", "").rstrip("/")
 
@@ -499,7 +500,8 @@ class ParameterServerZMQ:
 
         logger.info(f"[Job {job_id}] Running centralized evaluation on {len(all_test_batches)} test batches...")
         results = _evaluate_model(model, all_test_batches)
-
+        time_taken = int(time.time() - self.training_started_at) if self.training_started_at else 0
+        results["time_taken"] = format_duration(time_taken)
         # Save model
         model_path = f"./{job_id}.h5"
         loop = asyncio.get_event_loop()
@@ -705,6 +707,22 @@ def _fedavg(prev_lists, prev_shapes, new_lists, new_shapes, count):
     new  = _deserialize_weights(new_lists,  new_shapes)
     out  = [(p * count + n) / (count + 1.0) for p, n in zip(prev, new)]
     return _serialize_weights(out)
+
+def format_duration(seconds: int) -> str:
+    if seconds < 60:
+        return f"{seconds} sec"
+    elif seconds < 3600:
+        minutes = seconds // 60
+        return f"{minutes} min"
+    elif seconds < 86400:
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        return f"{hours} hour{'s' if hours != 1 else ''}" + (f" {minutes} min" if minutes else "")
+    else:
+        days = seconds // 86400
+        hours = (seconds % 86400) // 3600
+        return f"{days} day{'s' if days != 1 else ''}" + (f" {hours} hour{'s' if hours != 1 else ''}" if hours else "")
+
 
 # =======================
 # Entrypoint
