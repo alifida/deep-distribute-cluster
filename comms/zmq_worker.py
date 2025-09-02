@@ -582,17 +582,17 @@ class WorkerZMQ:
                 logger.info("Reported epoch %d metrics: %s", cur_epoch, logs)
 
                 # early stopping
-                if val_loss < best_val - 1e-8:
-                    best_val = val_loss
-                    no_improve = 0
-                else:
-                    no_improve += 1
+                #if val_loss < best_val - 1e-8:
+                #    best_val = val_loss
+                #    no_improve = 0
+                #else:
+                #    no_improve += 1
 
-                cur_epoch += 1
-                if no_improve >= patience or cur_epoch > max_epochs:
-                    logger.info("Stopping training on worker (early stop or reached max epochs). cur_epoch=%d", cur_epoch)
-                    await self.worker_done(job_id)
-                    break
+                #cur_epoch += 1
+                #if no_improve >= patience or cur_epoch > max_epochs:
+                #    logger.info("Stopping training on worker (early stop or reached max epochs). cur_epoch=%d", cur_epoch)
+                #    await self.worker_done(job_id)
+                #    break
 
             # end training main loop for this job
             logger.info("Worker training loop ended for job %s", job_id)
