@@ -19,7 +19,7 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import zmq.asyncio
-from config import settings
+from utils.config import settings
 # Import the parameter server class
 from comms.zmq_ps import ParameterServerZMQ
 

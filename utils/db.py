@@ -1,7 +1,7 @@
 # utils/db.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from config import settings
+from utils.config import settings
 
 
 #DATABASE_URL = "postgresql+psycopg2://postgres:szabist@192.168.10.120:5432/deep-distribute"
