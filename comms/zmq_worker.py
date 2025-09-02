@@ -10,7 +10,7 @@ Features:
 - Sends weights to PS after each training step (as in your previous code).
 - Detailed logging at each stop so you can see progress and detect stalls.
 """
-from util.config import settings
+from utils.config import settings
 from utils.db import SessionLocal
 import asyncio
 import json
