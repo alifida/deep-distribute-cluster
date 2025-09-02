@@ -8,18 +8,30 @@
             "module": "uvicorn",
             "args": [
                 "main:app",
-                "--reload"
+                "--reload",
+                "--host", "0.0.0.0",     // ✅ Allow external access
+                "--port", "8000"   
             ],
             "jinja": true,
-            "python": "${workspaceFolder}/venv/bin/python"  
+            "python": "e:\\workspace\\workspace\\deep-distribute-cluster\\venv\\Scripts\\python.exe"  
         },
         {
             "name": "zmq_worker",
+            "python": "e:\\workspace\\workspace\\deep-distribute-cluster\\venv\\Scripts\\python.exe"  
             "type": "python",
             "request": "launch",
             "module": "comms.zmq_worker",              // ✅ Run as module
             "cwd": "${workspaceFolder}",               // ✅ Set working directory to project root
             "justMyCode": true
-            }
+        },
+        {
+            "name": "zmq_worker 2",
+            "python": "e:\\workspace\\workspace\\deep-distribute-cluster\\venv\\Scripts\\python.exe"  
+            "type": "python",
+            "request": "launch",
+            "module": "comms.zmq_worker_2",              // ✅ Run as module
+            "cwd": "${workspaceFolder}",               // ✅ Set working directory to project root
+            "justMyCode": true
+        }
     ]
 }

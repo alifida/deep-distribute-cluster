@@ -9,6 +9,7 @@ from copy import deepcopy
 import time
 from utils.db import SessionLocal
 from models.db_models import TrainTrainingJob as Job
+from models.db_models import TrainClusterNode as ClusterNode
 import tensorflow as tf
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from services.keras_model_service import KerasCatalogService
@@ -157,6 +158,14 @@ class ParameterServerZMQ:
         #except Exception:
         #    num_partitions = max(len(self.workers), 1)
         self.training_started_at = time.time()
+         
+        worker_nodes = await self.get_workers(int(params.get("cluster")))
+        for w_node in worker_nodes:
+            key = w_node.node_type  +"_"+ str(w_node.id)
+            self.workers[key] = {"registered": True}
+
+
+        #########
         num_partitions = max(len(self.workers), 1)
         host_url = dataset_details.get("host_url", "").rstrip("/")
 
@@ -263,6 +272,10 @@ class ParameterServerZMQ:
         job_id = msg.get("job_id")
         if not worker_id:
             return {"status": "error", "error": "missing_worker_id"}
+
+        is_worker  = self.workers.get(worker_id, None)
+        if not is_worker:
+             return {"status": "error", "error": "unknown_worker"}
 
         self.workers[worker_id] = {"registered": True}
         logger.info(f"Worker registered: {worker_id}")
@@ -592,10 +605,32 @@ class ParameterServerZMQ:
                 db.close()
         await loop.run_in_executor(None, db_task)
 
+   
+
 
     # -----------------------
     # DB helpers
     # -----------------------
+
+    async def get_workers(self, cluster_id: int) -> List[ClusterNode]:
+        loop = asyncio.get_event_loop()
+
+        def db_task():
+            db: Session = SessionLocal()
+            try:
+                return (
+                    db.query(ClusterNode)
+                    .filter(
+                        ClusterNode.cluster_id == cluster_id,
+                        ClusterNode.node_type == "worker"
+                    )
+                    .all()
+                )
+            finally:
+                db.close()
+
+        return await loop.run_in_executor(None, db_task)
+        
     async def _update_job_status_db(self, job_id: str, status: str):
         loop = asyncio.get_event_loop()
         def db_task():

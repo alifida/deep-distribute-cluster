@@ -19,7 +19,7 @@ from typing import List, Dict
 import numpy as np
 import zmq
 import zmq.asyncio
-
+from config import settings
 # Import the parameter server class
 from comms.zmq_ps import ParameterServerZMQ
 
@@ -126,7 +126,7 @@ async def send_to_parameter_server(message: dict) -> dict:
     """
     ctx = zmq.asyncio.Context.instance()
     socket = ctx.socket(zmq.REQ)
-    socket.connect("tcp://127.0.0.1:5555")  # PS is running locally
+    socket.connect(settings.PARAMETER_SERVER_URL)  # PS is running locally
     try:
         await socket.send_json(message)
         reply = await socket.recv_json()
@@ -145,6 +145,7 @@ async def start_training_job(
     """
     Start a training job by sending request to Parameter Server.
     """
+    print("---- JOB RECEIVED------------")
     try:
         init_params = body.get("init_params")
         if not init_params:

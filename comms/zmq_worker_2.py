@@ -10,7 +10,7 @@ Features:
 - Sends weights to PS after each training step (as in your previous code).
 - Detailed logging at each stop so you can see progress and detect stalls.
 """
-from config import settings
+
 from utils.db import SessionLocal
 import asyncio
 import json
@@ -218,7 +218,7 @@ class TrainPrefetcher:
 # Worker (ZMQ)
 # -------------------------
 class WorkerZMQ:
-    def __init__(self, server_addr: str = settings.PARAMETER_SERVER_URL, worker_id: Optional[str] = None):
+    def __init__(self, server_addr: str = "tcp://192.168.10.120:5555", worker_id: Optional[str] = None):
         self.server_addr = server_addr
         worker_node = get_worker(3)  # cluster_id hardcoded for now
         if not worker_node :
@@ -600,7 +600,7 @@ class WorkerZMQ:
 
 
 def get_worker(cluster_id: int) -> Optional[ClusterNode]:
-    ip_address = settings.WORKER_HOST
+    ip_address = _get_local_ip_address()
 
     db: Session = SessionLocal()
     try:
@@ -616,7 +616,10 @@ def get_worker(cluster_id: int) -> Optional[ClusterNode]:
     finally:
         db.close()
 
- 
+def _get_local_ip_address() -> str:
+    return "192.168.10.100"
+
+
 
 async def worker_main(ps_addr: str, worker_id: Optional[str]):
     """Persistent worker process that stays connected and polls for jobs."""
@@ -639,7 +642,7 @@ def start_worker():
     """Entry point for launching the worker process."""
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ps", default=settings.PARAMETER_SERVER_URL, help="Parameter server address")
+    parser.add_argument("--ps", default="tcp://192.168.10.120:5555", help="Parameter server address")
     parser.add_argument("--id", default=None, help="Worker ID")
     args = parser.parse_args()
 

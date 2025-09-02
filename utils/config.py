@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     JOB_CHANNEL: str = os.getenv("JOB_CHANNEL", "deepdist:jobs:available")
     JOB_CLAIM_TTL: int = int(os.getenv("JOB_CLAIM_TTL", "30"))  # seconds
 
+
+
+    PARAMETER_SERVER_URL: str = os.getenv("PARAMETER_SERVER_URL", "tcp://192.168.10.120:5555")
+    WORKER_HOST: str = os.getenv("WORKER_HOST", "locahost")
+
     class Config:
         env_file = ".env"
 
