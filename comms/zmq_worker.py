@@ -524,7 +524,7 @@ class WorkerZMQ:
                                 #logs = {"loss": float(val_loss), "accuracy": float(val_acc), "val_loss": float(val_loss), "val_accuracy": float(val_acc)}
                                 logs = {}
                                 await self.report_metrics(job_id, int(item.get("epoch", max_epochs)), logs, scope="epoch")
-                                final_logs = {"accuracy": float(val_acc), "precision": 0.0, "recall": 0.0, "auc": 0.5, "f1_score": 0.0}
+                                final_logs = {}
                                 await self.report_metrics(job_id, int(item.get("epoch", max_epochs)), final_logs, scope="final", support=0)
                                 # notify PS we're done
                                 await self.worker_done(job_id)
