@@ -315,6 +315,13 @@ class WorkerZMQ:
         return float(loss.numpy()) if hasattr(loss, "numpy") else float(loss)
 
     async def _eval_split(self, job_id: str, set_name: str, cache: DataCache):
+
+
+        """Worker-side evaluation is disabled because PS handles evaluation centrally."""
+        logger.info(f"Skipping evaluation for split '{split}' on worker side.")
+        return 0.0, 0.0
+
+
         """Evaluate across all batches in given split. Uses cache for val/test as well."""
         from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score  # local import
         y_true_all, y_pred_all = [], []
@@ -513,8 +520,9 @@ class WorkerZMQ:
                                 logger.info("Received done control (epoch=%s); finishing training for this worker", item.get("epoch"))
                                 await prefetcher.stop()
                                 # final validation & final metrics reporting
-                                val_loss, val_acc = await self._eval_split(job_id, "val", cache)
-                                logs = {"loss": float(val_loss), "accuracy": float(val_acc), "val_loss": float(val_loss), "val_accuracy": float(val_acc)}
+                                #val_loss, val_acc = await self._eval_split(job_id, "val", cache)
+                                #logs = {"loss": float(val_loss), "accuracy": float(val_acc), "val_loss": float(val_loss), "val_accuracy": float(val_acc)}
+                                logs = {}
                                 await self.report_metrics(job_id, int(item.get("epoch", max_epochs)), logs, scope="epoch")
                                 final_logs = {"accuracy": float(val_acc), "precision": 0.0, "recall": 0.0, "auc": 0.5, "f1_score": 0.0}
                                 await self.report_metrics(job_id, int(item.get("epoch", max_epochs)), final_logs, scope="final", support=0)
@@ -542,10 +550,12 @@ class WorkerZMQ:
                 elif st == "done":
                     # nothing to train; finalize
                     logger.info("First fetch returned done -> finalizing worker")
-                    val_loss, val_acc = await self._eval_split(job_id, "val", cache)
-                    logs = {"loss": float(val_loss), "accuracy": float(val_acc), "val_loss": float(val_loss), "val_accuracy": float(val_acc)}
+                    #val_loss, val_acc = await self._eval_split(job_id, "val", cache)
+                    #logs = {"loss": float(val_loss), "accuracy": float(val_acc), "val_loss": float(val_loss), "val_accuracy": float(val_acc)}
+                    logs = {}
                     await self.report_metrics(job_id, int(first_batch.get("epoch", max_epochs)), logs, scope="epoch")
-                    final_logs = {"accuracy": float(val_acc), "precision": 0.0, "recall": 0.0, "auc": 0.5, "f1_score": 0.0}
+                    #final_logs = {"accuracy": float(val_acc), "precision": 0.0, "recall": 0.0, "auc": 0.5, "f1_score": 0.0}
+                    final_logs = {}
                     await self.report_metrics(job_id, int(first_batch.get("epoch", max_epochs)), final_logs, scope="final", support=0)
                     await self.worker_done(job_id)
                     logger.info("Worker finished with 'done' from PS")
@@ -557,16 +567,17 @@ class WorkerZMQ:
 
                 # End-of-epoch operations (validation & early stopping)
                 logger.info("Epoch %d completed locally — running validation/metrics", cur_epoch)
-                val_loss, val_acc = await self._eval_split(job_id, "val", cache)
+                #val_loss, val_acc = await self._eval_split(job_id, "val", cache)
                 # optionally compute train metrics by re-fetching train (keeps original behavior)
-                train_loss, train_acc = await self._eval_split(job_id, "train", cache)
+                #train_loss, train_acc = await self._eval_split(job_id, "train", cache)
 
-                logs = {
-                    "loss": float(train_loss),
-                    "accuracy": float(train_acc),
-                    "val_loss": float(val_loss),
-                    "val_accuracy": float(val_acc)
-                }
+                #logs = {
+                #    "loss": float(train_loss),
+                #    "accuracy": float(train_acc),
+                #    "val_loss": float(val_loss),
+                #    "val_accuracy": float(val_acc)
+                #}
+                logs = {}
                 await self.report_metrics(job_id, cur_epoch, logs, scope="epoch")
                 logger.info("Reported epoch %d metrics: %s", cur_epoch, logs)
 
